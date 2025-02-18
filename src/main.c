@@ -1,11 +1,17 @@
 #include "main.h"
 #include "raylib.h"
+#include "ui/button.h"
+#include "ui/context.h"
 #include "utils.h"
 #include <stdio.h>
 
 #define CELL_COUNT 4
 #define CELL_BLINK_TIME 0.25f
 #define NOTE_COUNT 16
+
+typedef enum { SCENE_MAIN_MENU = 0, SCENE_GAME = 1 } scene;
+
+scene current_scene = SCENE_MAIN_MENU;
 
 typedef struct {
   int spawn_tick;
@@ -15,7 +21,7 @@ typedef struct {
 } note;
 
 float BPM = 120.0f;
-float interval; // = 60.0f / BPM;
+float interval;
 float timer = 0;
 bool visible = true;
 
@@ -34,6 +40,9 @@ const int cell_top = 800 - cell_height;
 float cells_timer[CELL_COUNT] = {0};
 note notes[NOTE_COUNT] = {0};
 float note_speed;
+
+ui_context main_menu_ctx;
+ui_context gameplay_ctx;
 
 void reset_notes(void) {
   notes[0] = (note){0, 0, 0, 0};
@@ -61,19 +70,21 @@ void set_bpm(float _bpm) {
 }
 
 void init(void) {
-  printf("d=%d\n", board_height - cell_height);
-  printf("f=%f\n", note_speed);
   InitAudioDevice();
   Font loaded_font = GetFontDefault();
   SetDefaultFont(loaded_font);
   metronome = LoadSound("sounds/Perc_Snap_hi.wav");
   hitsound = LoadSound("sounds/Synth_Bell_A_hi.wav");
+  init_ui_context(&main_menu_ctx);
+  init_ui_context(&gameplay_ctx);
+}
+
+void init_game(void) {
   set_bpm(60.0f);
   reset_notes();
 }
 
 void draw_board(void) {
-
   Rectangle outline = {1200.0f / 2 - 400, 50, board_width, board_height};
   DrawRectangleLinesEx(outline, 5, WHITE);
 
@@ -122,7 +133,6 @@ void key_hit(int column) {
   note *hit = hit_note_in_column(column);
   if (hit != NULL) {
     int distance = ABS(cell_top - hit->position);
-    printf("distance=%d\n", distance);
     if (distance < 300) {
       hit->spawned = false;
       if (distance <= 75) {
@@ -142,7 +152,52 @@ void key_hit(int column) {
   }
 }
 
-void main_loop(void) {
+void scene_main_menu(void) {
+  // Rendering
+  update_ui_context(&main_menu_ctx);
+
+  DrawText("Rythm Duel", 250, 100, 128, BLUE);
+  DrawText("Ce jeu est écrit et réalisé par Evann Berthou", 340, 230, 24, BLUE);
+  DrawText("Et un peu Simon...", 340, 260, 20, BLUE);
+
+  const int base_buttons_y = 300;
+
+  if (ui_button_label_styled(&main_menu_ctx,
+                             (Rectangle){1200.f / 2 - 200, base_buttons_y, 400, 80},
+                             "Local Lobby", TEXT_STYLING_CENTER, 64)) {
+    init_game();
+    current_scene = SCENE_GAME;
+  }
+
+  if (ui_button_label_styled(&main_menu_ctx,
+                             (Rectangle){1200.f / 2 - 200, base_buttons_y + 100, 400, 80},
+                             "Online Lobby", TEXT_STYLING_CENTER, 64)) {
+    init_game();
+    current_scene = SCENE_GAME;
+  }
+
+  if (ui_button_label_styled(&main_menu_ctx,
+                             (Rectangle){1200.f / 2 - 200, base_buttons_y + 200, 400, 80},
+                             "Options", TEXT_STYLING_CENTER, 64)) {
+    CloseWindow();
+    return;
+  }
+
+  if (ui_button_label_styled(&main_menu_ctx,
+                             (Rectangle){1200.f / 2 - 200, base_buttons_y + 300, 400, 80},
+                             "Exit Game", TEXT_STYLING_CENTER, 64)) {
+    CloseWindow();
+    return;
+  }
+
+  BeginDrawing();
+  ClearBackground(BLACK);
+  DrawFPS(0, 0);
+  render_ui_context(&main_menu_ctx);
+  EndDrawing();
+}
+
+void scene_game(void) {
   // Updating
   float dt = GetFrameTime();
   timer += dt;
@@ -193,6 +248,8 @@ void main_loop(void) {
     key_hit(3);
   }
 
+  update_ui_context(&gameplay_ctx);
+
   // Rendering
   BeginDrawing();
 
@@ -209,5 +266,20 @@ void main_loop(void) {
 
   DrawFPS(0, 0);
   DrawText(TextFormat("BPM=%.0f", BPM), 1000, 0, 26, WHITE);
+  render_ui_context(&gameplay_ctx);
   EndDrawing();
+}
+
+void main_loop(void) {
+  switch (current_scene) {
+  case SCENE_MAIN_MENU:
+    scene_main_menu();
+    break;
+  case SCENE_GAME:
+    scene_game();
+    break;
+  default:
+    printf("Unknown scene\n");
+    break;
+  }
 }
