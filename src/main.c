@@ -44,6 +44,11 @@ float note_speed;
 ui_context main_menu_ctx;
 ui_context gameplay_ctx;
 
+Texture2D button;
+Sound button_hover_sound;
+Sound button_clicked_sound;
+Texture2D bg;
+
 void reset_notes(void) {
   notes[0] = (note){0, 0, 0, 0};
   notes[1] = (note){1, 1, 0, 0};
@@ -75,6 +80,11 @@ void init(void) {
   SetDefaultFont(loaded_font);
   metronome = LoadSound("sounds/Perc_Snap_hi.wav");
   hitsound = LoadSound("sounds/Synth_Bell_A_hi.wav");
+  button_hover_sound = LoadSound("assets/button_hover.wav");
+  button_clicked_sound = LoadSound("assets/button_clicked.wav");
+  button = LoadTexture("assets/button.png");
+  bg = LoadTexture("assets/bg.png");
+
   init_ui_context(&main_menu_ctx);
   init_ui_context(&gameplay_ctx);
 }
@@ -152,48 +162,54 @@ void key_hit(int column) {
   }
 }
 
+bool main_menu_button(int i, const char *message) {
+  const int base_menu_y = 175;
+  const int padding = 150;
+  bool result = ui_button_image_with_label(
+      &main_menu_ctx,
+      (Rectangle){1200.f - 450, base_menu_y + padding * i, 400, 100}, message,
+      button, 54, button_hover_sound, button_clicked_sound);
+  return result;
+}
+
 void scene_main_menu(void) {
   // Rendering
   update_ui_context(&main_menu_ctx);
 
-  DrawText("Rythm Duel", 250, 100, 128, BLUE);
-  DrawText("Ce jeu est écrit et réalisé par Evann Berthou", 340, 230, 24, BLUE);
-  DrawText("Et un peu Simon...", 340, 260, 20, BLUE);
-
-  const int base_buttons_y = 300;
-
-  if (ui_button_label_styled(&main_menu_ctx,
-                             (Rectangle){1200.f / 2 - 200, base_buttons_y, 400, 80},
-                             "Local Lobby", TEXT_STYLING_CENTER, 64)) {
+  if (main_menu_button(0, "Local Lobby")) {
     init_game();
     current_scene = SCENE_GAME;
   }
 
-  if (ui_button_label_styled(&main_menu_ctx,
-                             (Rectangle){1200.f / 2 - 200, base_buttons_y + 100, 400, 80},
-                             "Online Lobby", TEXT_STYLING_CENTER, 64)) {
+  if (main_menu_button(1, "Online Lobby")) {
     init_game();
     current_scene = SCENE_GAME;
   }
 
-  if (ui_button_label_styled(&main_menu_ctx,
-                             (Rectangle){1200.f / 2 - 200, base_buttons_y + 200, 400, 80},
-                             "Options", TEXT_STYLING_CENTER, 64)) {
+  if (main_menu_button(2, "Options")) {
     CloseWindow();
     return;
   }
 
-  if (ui_button_label_styled(&main_menu_ctx,
-                             (Rectangle){1200.f / 2 - 200, base_buttons_y + 300, 400, 80},
-                             "Exit Game", TEXT_STYLING_CENTER, 64)) {
+  if (main_menu_button(3, "Quit")) {
     CloseWindow();
     return;
   }
+
+  Rectangle source = {0, 0, bg.width, bg.height};
+  Rectangle dest = {0, 0, GetRenderWidth(), GetRenderHeight()};
 
   BeginDrawing();
   ClearBackground(BLACK);
-  DrawFPS(0, 0);
+  DrawTexturePro(bg, source, dest, (Vector2){0, 0}, 0, WHITE);
   render_ui_context(&main_menu_ctx);
+
+  DrawText("Rythm Duel", 75, 250, 96, YELLOW);
+  DrawText("Ce jeu est écrit et réalisé par Evann Berthou", 75, 400, 24,
+           YELLOW);
+  DrawText("Et un peu Simon...", 75, 430, 20, YELLOW);
+
+  DrawFPS(0, 0);
   EndDrawing();
 }
 
@@ -267,6 +283,7 @@ void scene_game(void) {
   DrawFPS(0, 0);
   DrawText(TextFormat("BPM=%.0f", BPM), 1000, 0, 26, WHITE);
   render_ui_context(&gameplay_ctx);
+
   EndDrawing();
 }
 

@@ -1,8 +1,8 @@
 #ifndef UI_TEXTAREA_H
 #define UI_TEXTAREA_H
 
-#include "str_buf.h"
-#include "ui/context.h"
+#include "../str_buf.h"
+#include "context.h"
 #include <stddef.h>
 
 typedef struct ui_textarea_data {

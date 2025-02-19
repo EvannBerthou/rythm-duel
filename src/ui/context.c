@@ -1,7 +1,7 @@
-#include "ui/context.h"
+#include "context.h"
+#include "button.h"
 #include "raylib.h"
-#include "ui/button.h"
-#include "ui/textarea.h"
+#include "textarea.h"
 #include <assert.h>
 #include <raymath.h>
 #include <stdlib.h>
@@ -19,7 +19,6 @@ void init_ui_context(ui_context *ui) {
 }
 
 void update_ui_context(ui_context *ui) {
-  ui->prev_mouse = GetMousePosition();
   if (IsMouseButtonPressed(0)) {
     ui->down_at = GetMousePosition();
   }
@@ -47,6 +46,7 @@ void render_ui_context(ui_context *ui) {
     free(ui->last);
     ui->last = prev;
   }
+  ui->prev_mouse = GetMousePosition();
 }
 
 void free_ui_context(ui_context *ui) {
